@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/AidenHadisi/MyDailyBibleBot/bot"
 	"github.com/dghubble/go-twitter/twitter"
@@ -9,10 +10,10 @@ import (
 
 func main() {
 	auth := &bot.Auth{
-		ConsumerKey:    "2Llovmsx9eWcXyieYO3tlzZxj",
-		ConsumerSecret: "aM7odZl49AVtzJR76PRhFdZWWVnVZW6Fqpxnf14Y1nGdpIgbss",
-		AccessToken:    "1386538984680026116-Hu1MrJnJYTjlH5J3TrWpi5TLITabT9",
-		AccessSecret:   "AcMxtxSb2EY6BgxYqk9u8mVApwbfE59f8ofndVp18nAYS",
+		ConsumerKey:    os.Getenv("CONSUMER_KEY"),
+		ConsumerSecret: os.Getenv("CONSUMER_SECRET"),
+		AccessToken:    os.Getenv("ACCESS_TOKEN"),
+		AccessSecret:   os.Getenv("ACCESS_SECRET"),
 	}
 
 	bibleBot, err := bot.CreateBot(auth)
