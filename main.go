@@ -32,16 +32,4 @@ func main() {
 
 	bibleBot.Start()
 
-	// res, err := bibleBot.GetVerse("/romans 1000:")
-	// if err != ni {
-	// 	log.Printf("Error %s", er)
-	// }
-
-	// fmt.Printf("%s", res.Errr)
-
-	// _, _, err = bot.TwitterClient.Statuses.Update("just setting up my twttr", nil)
-	// if err != nil {
-	// 	log.Printf("%s\n", err)
-	// }
-
 }
