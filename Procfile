@@ -1,1 +1,1 @@
-
+worker: MyDailyBibleBot
