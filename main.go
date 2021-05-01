@@ -32,4 +32,6 @@ func main() {
 
 	bibleBot.Start()
 
+
+
 }

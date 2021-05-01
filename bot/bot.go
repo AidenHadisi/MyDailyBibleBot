@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	baseURL = "https://bible-api.com/"
+	baseURL     = "https://bible-api.com/"
+	botUsername = "MyDailyBibleBot"
 )
 
 //Auth defines a struct twitter auth tokens

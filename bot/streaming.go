@@ -8,6 +8,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/AidenHadisi/go-text-splitter/splitter"
 	"github.com/dghubble/go-twitter/twitter"
 	"github.com/patrickmn/go-cache"
 )
@@ -35,7 +36,11 @@ func (bot *Bot) Start() {
 }
 
 func (bot *Bot) handleMessage(tweet *twitter.Tweet) {
+	if tweet.User.ScreenName == botUsername {
+		return
+	}
 	parsed, err := ParseText(tweet.Text)
+	log.Println(tweet.Text)
 
 	if err != nil || !parsed.IsValid() {
 		log.Println(err)
@@ -48,32 +53,16 @@ func (bot *Bot) handleMessage(tweet *twitter.Tweet) {
 		verse = fmt.Sprintf("%s-%s", verse, parsed.End)
 	}
 
-	go bot.fetchAndReply(tweet, verse)
+	go bot.fetch(tweet, verse)
 }
 
-func (bot *Bot) fetchAndReply(tweet *twitter.Tweet, verse string) {
+func (bot *Bot) fetch(tweet *twitter.Tweet, verse string) {
 	cached, found := bot.cache.Get(verse)
 
 	if found {
+		log.Printf("Found in cache\n")
 		reply := fmt.Sprintf("@%s \"%s\" - %s", tweet.User.ScreenName, cached, verse)
-
-		reponseParts := breakupString(reply, 280)
-
-		t := tweet
-		var err error
-		for _, part := range reponseParts {
-			t, _, err = bot.TwitterClient.Statuses.Update(part, &twitter.StatusUpdateParams{
-				InReplyToStatusID: t.ID,
-			})
-
-			if err != nil {
-				return
-			}
-
-		}
-		bot.TwitterClient.Statuses.Update(reply, &twitter.StatusUpdateParams{
-			InReplyToStatusID: tweet.ID,
-		})
+		bot.textToTweet(reply, tweet)
 		return
 	}
 
@@ -83,25 +72,15 @@ func (bot *Bot) fetchAndReply(tweet *twitter.Tweet, verse string) {
 		return
 	}
 
-	result := fmt.Sprintf("@%s \"%s\" - %s", tweet.User.ScreenName, strings.TrimSuffix(response.Text, "\n"), verse)
+	reply := fmt.Sprintf("@%s \"%s\" - %s", tweet.User.ScreenName, strings.TrimSuffix(response.Text, "\n"), verse)
 
-	reponseParts := breakupString(result, 280)
+	reponseParts := splitter.Split(reply, 260)
 
 	if len(reponseParts) > 3 {
 		return
 	}
 
-	t := tweet
-	for _, part := range reponseParts {
-		t, _, err = bot.TwitterClient.Statuses.Update(part, &twitter.StatusUpdateParams{
-			InReplyToStatusID: t.ID,
-		})
-
-		if err != nil {
-			return
-		}
-
-	}
+	bot.textToTweet(reply, tweet)
 
 	bot.cache.Set(verse, strings.TrimSuffix(response.Text, "\n"), cache.DefaultExpiration)
 }

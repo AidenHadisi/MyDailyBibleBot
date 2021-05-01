@@ -1,6 +1,13 @@
 package bot
 
-func breakupString(s string, size int) []string {
+import (
+	"fmt"
+
+	"github.com/AidenHadisi/go-text-splitter/splitter"
+	"github.com/dghubble/go-twitter/twitter"
+)
+
+func BreakupString(s string, size int) []string {
 	if size >= len(s) {
 		return []string{s}
 	}
@@ -19,4 +26,29 @@ func breakupString(s string, size int) []string {
 		chunks = append(chunks, string(chunk[:len]))
 	}
 	return chunks
+}
+
+func (bot *Bot) textToTweet(text string, tweet *twitter.Tweet) {
+	reponseParts := splitter.Split(text, 260)
+
+	t := tweet
+	var err error
+	for index, part := range reponseParts {
+		var message string
+		if index > 0 {
+			message = fmt.Sprintf("@%s %s", botUsername, part)
+		} else {
+			message = fmt.Sprintf("@%s %s", t.User.ScreenName, part)
+
+		}
+		t, _, err = bot.TwitterClient.Statuses.Update(message, &twitter.StatusUpdateParams{
+			InReplyToStatusID: t.ID,
+		})
+
+		if err != nil {
+			return
+		}
+
+	}
+
 }
