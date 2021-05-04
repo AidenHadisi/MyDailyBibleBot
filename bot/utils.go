@@ -35,6 +35,7 @@ func (bot *Bot) textToTweet(text string, tweet *twitter.Tweet) {
 	var err error
 	for index, part := range reponseParts {
 		var message string
+		//If intial tweet @ the sender, otherwise reply to previous bot message to create a thread
 		if index > 0 {
 			message = fmt.Sprintf("@%s %s", botUsername, part)
 		} else {

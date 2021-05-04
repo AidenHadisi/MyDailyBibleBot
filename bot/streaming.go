@@ -59,12 +59,14 @@ func (bot *Bot) handleMessage(tweet *twitter.Tweet) {
 func (bot *Bot) fetch(tweet *twitter.Tweet, verse string) {
 	cached, found := bot.cache.Get(verse)
 
+	//If it's in cache, return from cache
 	if found {
 		reply := fmt.Sprintf("@%s \"%s\" - %s", tweet.User.ScreenName, cached, verse)
 		bot.textToTweet(reply, tweet)
 		return
 	}
 
+	//Otherwise get it from API
 	response, err := bot.GetVerse(verse)
 	if err != nil {
 		log.Println(err)
@@ -75,11 +77,13 @@ func (bot *Bot) fetch(tweet *twitter.Tweet, verse string) {
 
 	reponseParts := splitter.Split(reply, 260)
 
+	//Max of 3 replies
 	if len(reponseParts) > 3 {
 		return
 	}
 
 	bot.textToTweet(reply, tweet)
 
+	//Add to cache
 	bot.cache.Set(verse, strings.TrimSuffix(response.Text, "\n"), cache.DefaultExpiration)
 }
