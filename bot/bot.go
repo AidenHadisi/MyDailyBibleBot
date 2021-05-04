@@ -59,7 +59,7 @@ func CreateBot(auth *Auth) (*Bot, error) {
 	}
 	bot.cache = cache.New(time.Hour, 15*time.Minute)
 	gocron.Every(1).Hour().From(gocron.NextTick()).Do(bot.hourlyPost)
-	<-gocron.Start()
+	gocron.Start()
 	return bot, nil
 }
 
