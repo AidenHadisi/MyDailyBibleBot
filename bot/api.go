@@ -37,7 +37,7 @@ func (bot *Bot) get(path string, reqData interface{}) (*Response, error) {
 func (bot *Bot) sendRequest(method, path string, reqData interface{}) (*Response, error) {
 	resp := &Response{}
 
-	req, err := http.NewRequest(method, baseURL+path, nil)
+	req, err := http.NewRequest(method, baseURL+path+"translation=kjv", nil)
 
 	if err != nil {
 		return nil, err
