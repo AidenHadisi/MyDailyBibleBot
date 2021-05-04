@@ -16,7 +16,7 @@ import (
 // Start starts the bot and begins listening to Tweets
 func (bot *Bot) Start() {
 	params := &twitter.StreamFilterParams{
-		Track:         []string{"@MyDailyBibleBot"},
+		Track:         []string{fmt.Sprintf("@%s", botUsername)},
 		StallWarnings: twitter.Bool(true),
 	}
 	stream, err := bot.TwitterClient.Streams.Filter(params)
@@ -39,8 +39,8 @@ func (bot *Bot) handleMessage(tweet *twitter.Tweet) {
 	if tweet.User.ScreenName == botUsername {
 		return
 	}
+
 	parsed, err := ParseText(tweet.Text)
-	log.Println(tweet.Text)
 
 	if err != nil || !parsed.IsValid() {
 		log.Println(err)
@@ -60,7 +60,6 @@ func (bot *Bot) fetch(tweet *twitter.Tweet, verse string) {
 	cached, found := bot.cache.Get(verse)
 
 	if found {
-		log.Printf("Found in cache\n")
 		reply := fmt.Sprintf("@%s \"%s\" - %s", tweet.User.ScreenName, cached, verse)
 		bot.textToTweet(reply, tweet)
 		return

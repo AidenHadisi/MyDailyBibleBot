@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/google/go-querystring/query"
 )
 
 type verse struct {
@@ -13,6 +15,10 @@ type verse struct {
 	Chapter  int
 	Verse    int
 	Text     string
+}
+
+type stringQuery struct {
+	Translation string `url:"translation"`
 }
 
 //Response defines the structure for verses returned from the API
@@ -27,7 +33,7 @@ type Response struct {
 
 //GetVerse gets the requested verses from the API
 func (bot *Bot) GetVerse(verse string) (*Response, error) {
-	return bot.get(verse, nil)
+	return bot.get(verse, &stringQuery{Translation: "kjv"})
 }
 
 func (bot *Bot) get(path string, reqData interface{}) (*Response, error) {
@@ -37,10 +43,15 @@ func (bot *Bot) get(path string, reqData interface{}) (*Response, error) {
 func (bot *Bot) sendRequest(method, path string, reqData interface{}) (*Response, error) {
 	resp := &Response{}
 
-	req, err := http.NewRequest(method, baseURL+path+"?translation=kjv", nil)
-
+	req, err := http.NewRequest(method, baseURL+path, nil)
 	if err != nil {
 		return nil, err
+	}
+
+	v, err := query.Values(reqData)
+	if err == nil {
+		req.URL.RawQuery = v.Encode()
+
 	}
 
 	err = bot.doRequest(req, resp)
