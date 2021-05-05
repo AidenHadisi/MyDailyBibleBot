@@ -98,7 +98,7 @@ func (bot *Bot) fetch(verse string) (string, error) {
 		return "", err
 	}
 
-	text := fmt.Sprintf("\"%s\" - %s", strings.ReplaceAll(response.Text, "\n", ""), verse)
+	text := fmt.Sprintf("\"%s\" - %s", strings.ReplaceAll(response.Text, "\n", " "), verse)
 
 	bot.cache.Set(verse, text, cache.DefaultExpiration)
 
