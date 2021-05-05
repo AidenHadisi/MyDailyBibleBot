@@ -67,7 +67,7 @@ func (bot *Bot) hourlyPost() {
 		return
 	}
 
-	reply := fmt.Sprintf("\"%s\" - %s", strings.ReplaceAll(response.Text, "\n", ""), randomVerse)
+	reply := fmt.Sprintf("\"%s\" - %s", strings.ReplaceAll(response.Text, "\n", " "), randomVerse)
 
 	bot.TwitterClient.Statuses.Update(reply, nil)
 }
