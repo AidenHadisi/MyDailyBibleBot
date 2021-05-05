@@ -47,43 +47,61 @@ func (bot *Bot) handleMessage(tweet *twitter.Tweet) {
 		return
 	}
 
-	verse := fmt.Sprintf("%s %s:%s", strings.Title(strings.ToLower(parsed.Book)), parsed.Chapter, parsed.Start)
+	verse := fmt.Sprintf("%s %s:%s", parsed.Book, parsed.Chapter, parsed.Start)
 
 	if parsed.IsMultiVerse() {
 		verse = fmt.Sprintf("%s-%s", verse, parsed.End)
 	}
 
-	go bot.fetch(tweet, verse)
+	go bot.reply(tweet, verse)
 }
 
-func (bot *Bot) fetch(tweet *twitter.Tweet, verse string) {
-	cached, found := bot.cache.Get(verse)
+func (bot *Bot) reply(tweet *twitter.Tweet, verse string) {
+	text, err := bot.fetch(verse)
 
-	//If it's in cache, return from cache
-	if found {
-		reply := fmt.Sprintf("@%s \"%s\" - %s", tweet.User.ScreenName, cached, verse)
-		bot.textToTweet(reply, tweet)
-		return
-	}
-
-	//Otherwise get it from API
-	response, err := bot.GetVerse(verse)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	reply := fmt.Sprintf("@%s \"%s\" - %s", tweet.User.ScreenName, strings.TrimSuffix(response.Text, "\n"), verse)
+	reponseParts := splitter.Split(text, 260)
 
-	reponseParts := splitter.Split(reply, 260)
+	t := tweet
+	for index, part := range reponseParts {
+		var message string
+		//If intial tweet @ the sender, otherwise reply to previous bot message to create a thread
+		if index == 0 {
+			message = fmt.Sprintf("@%s %s", t.User.ScreenName, part)
+		} else {
+			message = fmt.Sprintf("@%s %s", botUsername, part)
+		}
+		t, _, err = bot.TwitterClient.Statuses.Update(message, &twitter.StatusUpdateParams{
+			InReplyToStatusID: t.ID,
+		})
 
-	//Max of 3 replies
-	if len(reponseParts) > 3 {
-		return
+		if err != nil {
+			return
+		}
+
+	}
+}
+
+func (bot *Bot) fetch(verse string) (string, error) {
+	cached, found := bot.cache.Get(verse)
+
+	if found {
+		return cached.(string), nil
 	}
 
-	bot.textToTweet(reply, tweet)
+	response, err := bot.GetVerse(verse)
+	if err != nil {
+		return "", err
+	}
 
-	//Add to cache
-	bot.cache.Set(verse, strings.TrimSuffix(response.Text, "\n"), cache.DefaultExpiration)
+	text := fmt.Sprintf("\"%s\" - %s", strings.ReplaceAll(response.Text, "\n", ""), verse)
+
+	bot.cache.Set(verse, text, cache.DefaultExpiration)
+
+	return text, nil
+
 }

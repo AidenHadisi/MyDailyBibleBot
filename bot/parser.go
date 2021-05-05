@@ -56,7 +56,7 @@ func ParseText(text string) (*ParsedText, error) {
 		return nil, errors.New("incorrect text provided")
 	}
 	parsed := &ParsedText{
-		Book:    strings.ToLower(result[1]),
+		Book:    strings.Title(strings.ToLower(result[1])),
 		Chapter: result[3],
 		Start:   result[4],
 		End:     result[6],
