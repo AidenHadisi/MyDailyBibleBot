@@ -77,7 +77,7 @@ func CreateBot(auth *Auth) (*Bot, error) {
 
 func (bot *Bot) hourlyPost() {
 	randomVerse := verses[rand.Intn(len(verses))]
-	log.Println(randomVerse)
+	log.Println(rand.Intn(len(verses)))
 	log.Println(len(verses))
 	response, err := bot.GetVerse(randomVerse)
 	if err != nil {
