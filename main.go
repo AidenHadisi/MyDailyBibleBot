@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"githu.com/AidenHadisi/MyDailyBibleBot/bot"
+	"github.com/AidenHadisi/MyDailyBibleBot/bot"
 	"github.com/dghubble/go-twitter/twitter"
 )
 
