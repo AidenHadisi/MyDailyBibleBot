@@ -1,10 +1,13 @@
 package bot
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -37,6 +40,7 @@ type Bot struct {
 	Auth          *Auth
 	HTTPClient    httpClient
 	cache         *cache.Cache
+	verses        []string
 }
 
 //CreateBot created a new instance of MyDailyBibleBot
@@ -54,13 +58,30 @@ func CreateBot(auth *Auth) (*Bot, error) {
 		Timeout: time.Second,
 	}
 	bot.cache = cache.New(time.Hour, 15*time.Minute)
+
+	jsonFile, err := os.Open("users.json")
+	if err != nil {
+		return nil, err
+	}
+
+	byteValue, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(byteValue, &bot.verses)
+	if err != nil {
+		return nil, err
+	}
+
 	gocron.Every(1).Hour().From(gocron.NextTick()).Do(bot.hourlyPost)
 	gocron.Start()
+
 	return bot, nil
 }
 
 func (bot *Bot) hourlyPost() {
-	randomVerse := verses[rand.Intn(len(verses))]
+	randomVerse := bot.verses[rand.Intn(len(bot.verses))]
 	response, err := bot.GetVerse(randomVerse)
 	if err != nil {
 		log.Println(err)
@@ -69,5 +90,8 @@ func (bot *Bot) hourlyPost() {
 
 	reply := fmt.Sprintf("\"%s\" - %s", strings.ReplaceAll(response.Text, "\n", " "), randomVerse)
 
-	bot.TwitterClient.Statuses.Update(reply, nil)
+	_, _, err = bot.TwitterClient.Statuses.Update(reply, nil)
+	if err != nil {
+		log.Println(err)
+	}
 }
