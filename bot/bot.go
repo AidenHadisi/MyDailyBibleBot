@@ -58,7 +58,7 @@ func CreateBot(auth *Auth) (*Bot, error) {
 	}
 	bot.cache = cache.New(time.Hour, 15*time.Minute)
 
-	byteValue, err := ioutil.ReadFile("./verses.json")
+	byteValue, err := ioutil.ReadFile("bot/verses.json")
 	if err != nil {
 		return nil, err
 	}
