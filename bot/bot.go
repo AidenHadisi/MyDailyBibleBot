@@ -7,7 +7,6 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -59,12 +58,7 @@ func CreateBot(auth *Auth) (*Bot, error) {
 	}
 	bot.cache = cache.New(time.Hour, 15*time.Minute)
 
-	jsonFile, err := os.Open("verses.json")
-	if err != nil {
-		return nil, err
-	}
-
-	byteValue, err := ioutil.ReadAll(jsonFile)
+	byteValue, err := ioutil.ReadFile("./verses.json")
 	if err != nil {
 		return nil, err
 	}
