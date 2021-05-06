@@ -2,13 +2,17 @@ package main
 
 import (
 	"log"
+	"math/rand"
 	"os"
+	"time"
 
-	"github.com/AidenHadisi/MyDailyBibleBot/bot"
+	"githu.com/AidenHadisi/MyDailyBibleBot/bot"
 	"github.com/dghubble/go-twitter/twitter"
 )
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
+
 	auth := &bot.Auth{
 		ConsumerKey:    os.Getenv("CONSUMER_KEY"),
 		ConsumerSecret: os.Getenv("CONSUMER_SECRET"),

@@ -45,6 +45,7 @@ type Bot struct {
 
 //CreateBot created a new instance of MyDailyBibleBot
 func CreateBot(auth *Auth) (*Bot, error) {
+
 	config := oauth1.NewConfig(auth.ConsumerKey, auth.ConsumerSecret)
 	token := oauth1.NewToken(auth.AccessToken, auth.AccessSecret)
 
@@ -77,8 +78,6 @@ func CreateBot(auth *Auth) (*Bot, error) {
 
 func (bot *Bot) hourlyPost() {
 	randomVerse := verses[rand.Intn(len(verses))]
-	log.Println(rand.Intn(len(verses)))
-	log.Println(len(verses))
 	response, err := bot.GetVerse(randomVerse)
 	if err != nil {
 		log.Println(err)
@@ -86,7 +85,7 @@ func (bot *Bot) hourlyPost() {
 	}
 
 	reply := fmt.Sprintf("\"%s\" - %s", strings.ReplaceAll(response.Text, "\n", " "), randomVerse)
-	log.Println(reply)
+
 	_, _, err = bot.TwitterClient.Statuses.Update(reply, nil)
 	if err != nil {
 		log.Println(err)
