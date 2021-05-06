@@ -59,7 +59,7 @@ func CreateBot(auth *Auth) (*Bot, error) {
 	}
 	bot.cache = cache.New(time.Hour, 15*time.Minute)
 
-	jsonFile, err := os.Open("users.json")
+	jsonFile, err := os.Open("./verses.json")
 	if err != nil {
 		return nil, err
 	}
