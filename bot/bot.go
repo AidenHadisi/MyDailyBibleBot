@@ -21,6 +21,8 @@ const (
 	botUsername = "MyDailyBibleBot"
 )
 
+var verses []string
+
 //Auth defines a struct twitter auth tokens
 type Auth struct {
 	ConsumerKey    string
@@ -39,7 +41,6 @@ type Bot struct {
 	Auth          *Auth
 	HTTPClient    httpClient
 	cache         *cache.Cache
-	verses        []string
 }
 
 //CreateBot created a new instance of MyDailyBibleBot
@@ -63,7 +64,7 @@ func CreateBot(auth *Auth) (*Bot, error) {
 		return nil, err
 	}
 
-	err = json.Unmarshal(byteValue, &bot.verses)
+	err = json.Unmarshal(byteValue, &verses)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +76,7 @@ func CreateBot(auth *Auth) (*Bot, error) {
 }
 
 func (bot *Bot) hourlyPost() {
-	randomVerse := bot.verses[rand.Intn(len(bot.verses))]
+	randomVerse := verses[rand.Intn(len(verses))]
 	response, err := bot.GetVerse(randomVerse)
 	if err != nil {
 		log.Println(err)

@@ -47,13 +47,7 @@ func (bot *Bot) handleMessage(tweet *twitter.Tweet) {
 		return
 	}
 
-	verse := fmt.Sprintf("%s %s:%s", parsed.Book, parsed.Chapter, parsed.Start)
-
-	if parsed.IsMultiVerse() {
-		verse = fmt.Sprintf("%s-%s", verse, parsed.End)
-	}
-
-	go bot.reply(tweet, verse)
+	go bot.reply(tweet, parsed.GetPath())
 }
 
 func (bot *Bot) reply(tweet *twitter.Tweet, verse string) {

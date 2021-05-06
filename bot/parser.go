@@ -2,6 +2,7 @@ package bot
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -42,9 +43,15 @@ func (p *ParsedText) IsValid() bool {
 	return true
 }
 
-//IsMultiVerse returns if the user has requested a range of verses
-func (p *ParsedText) IsMultiVerse() bool {
-	return p.End != ""
+//GetPath constructs a API path from the ParsedText
+func (p *ParsedText) GetPath() string {
+	verse := fmt.Sprintf("%s %s:%s", p.Book, p.Chapter, p.Start)
+
+	if p.End != "" {
+		verse = fmt.Sprintf("%s-%s", verse, p.End)
+	}
+
+	return verse
 }
 
 //ParseText parses a tweet text and returns requested verse's info
