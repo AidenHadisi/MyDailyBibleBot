@@ -1,13 +1,24 @@
 package bot
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-
-	"github.com/google/go-querystring/query"
 )
+
+const (
+	baseURL = "https://bible-api.com/"
+)
+
+type ResponseData struct {
+	StatusCode int
+	Header     http.Header
+}
+
+type Response struct {
+	ResponseData
+	Success interface{}
+	Failure interface{}
+}
 
 type verse struct {
 	BookID   string `json:"book_id"`
@@ -17,73 +28,40 @@ type verse struct {
 	Text     string
 }
 
-type stringQuery struct {
+type BibleOptions struct {
 	Translation string `url:"translation"`
 }
 
-//Response defines the structure for verses returned from the API
-type Response struct {
-	StatusCode int
-	Header     http.Header
-	Error      string `json:"error"`
-	Reference  string
-	Verses     []*verse
-	Text       string
+type Verse struct {
+	Reference string
+	Verses    []*verse
+	Text      string
+}
+
+//Response defines the structure for error returned from the API
+type ErrResponse struct {
+	ErrorMessage string `json:"error"`
+}
+
+func (e ErrResponse) Error() string {
+
+	return fmt.Sprintf("API request failed: %s", e.ErrorMessage)
+
 }
 
 //GetVerse gets the requested verses from the API
-func (bot *Bot) GetVerse(verse string) (*Response, error) {
-	return bot.get(verse, &stringQuery{Translation: "kjv"})
-}
+func (bot *Bot) GetVerse(verse string, bibleOptions *BibleOptions) (*Verse, error) {
 
-func (bot *Bot) get(path string, reqData interface{}) (*Response, error) {
-	return bot.sendRequest(http.MethodGet, path, reqData)
-}
+	resp, err := bot.get(baseURL+verse, bibleOptions, &Verse{}, &ErrResponse{})
 
-func (bot *Bot) sendRequest(method, path string, reqData interface{}) (*Response, error) {
-	resp := &Response{}
-
-	req, err := http.NewRequest(method, baseURL+path, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	v, err := query.Values(reqData)
-	if err == nil {
-		req.URL.RawQuery = v.Encode()
-
+	if resp.Failure != nil {
+		return nil, resp.Failure.(*ErrResponse)
 	}
 
-	err = bot.doRequest(req, resp)
-	if err != nil {
-		return nil, err
-	}
+	return resp.Success.(*Verse), nil
 
-	return resp, nil
-}
-
-func (bot *Bot) doRequest(req *http.Request, res *Response) error {
-
-	response, err := bot.HTTPClient.Do(req)
-
-	if err != nil {
-		return fmt.Errorf("API request error: %s", err.Error())
-	}
-	defer response.Body.Close()
-
-	res.Header = response.Header
-	res.StatusCode = response.StatusCode
-
-	bodyBytes, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(bodyBytes, &res)
-
-	if err != nil {
-		return fmt.Errorf("failed to decode API response: %s", err.Error())
-	}
-
-	return nil
 }

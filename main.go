@@ -22,7 +22,7 @@ func main() {
 
 	bibleBot, err := bot.CreateBot(auth)
 	if err != nil {
-		log.Fatalf("Error %s", err)
+		log.Fatalf("failed to start bot: %s", err)
 	}
 
 	_, _, err = bibleBot.TwitterClient.Accounts.VerifyCredentials(&twitter.AccountVerifyParams{
@@ -31,7 +31,7 @@ func main() {
 	})
 
 	if err != nil {
-		log.Fatalf("Error %s", err)
+		log.Fatalf("credientionals invalid: %s", err)
 	}
 
 	bibleBot.Start()
