@@ -60,7 +60,7 @@ func CreateBot(auth *Auth) (*Bot, error) {
 		return nil, err
 	}
 
-	bot.req = request.New().SetFailure(&ErrResponse{}).SetSuccess(&Response{})
+	bot.req = request.New().SetFailure(&ErrResponse{}).SetSuccess(&Response{}).SetQuery(&BibleOptions{Translation: "kjv"})
 
 	gocron.Every(5).Hour().From(gocron.NextTick()).Do(bot.hourlyPost)
 	gocron.Start()
