@@ -14,12 +14,6 @@ type ResponseData struct {
 	Header     http.Header
 }
 
-type Response struct {
-	ResponseData
-	Success interface{}
-	Failure interface{}
-}
-
 type verse struct {
 	BookID   string `json:"book_id"`
 	BookName string `json:"book_name"`
