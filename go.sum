@@ -1,3 +1,5 @@
+github.com/AidenHadisi/go-simple-request v0.0.0-20210601054529-e1ca5fd77b2c h1:EYrFFNkPP0hTWgysAgNZdAsRVVLLzrN4mWXq+yRi0+I=
+github.com/AidenHadisi/go-simple-request v0.0.0-20210601054529-e1ca5fd77b2c/go.mod h1:X6LiKGbc8HQjpx6NhOzyrH8hY+ZG3R7us2cXTfYTZZA=
 github.com/AidenHadisi/go-text-splitter v0.0.0-20210501085727-a1f01fbfc666 h1:DJoSnEU1RFWav46M1MGw4ArbnpTMW7yi+Izj1hkm1MA=
 github.com/AidenHadisi/go-text-splitter v0.0.0-20210501085727-a1f01fbfc666/go.mod h1:s2TNm4UkmzV2WgZII6iJ8Yqjd6rHfab7PYReEikQog0=
 github.com/cenkalti/backoff v2.1.1+incompatible/go.mod h1:90ReRw6GdpyfrHakVjL/QHaoyV4aDUVVkXQJJJ3NXXM=

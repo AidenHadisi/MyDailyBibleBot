@@ -44,15 +44,13 @@ type ErrResponse struct {
 }
 
 func (e ErrResponse) Error() string {
-
 	return fmt.Sprintf("API request failed: %s", e.ErrorMessage)
-
 }
 
 //GetVerse gets the requested verses from the API
 func (bot *Bot) GetVerse(verse string, bibleOptions *BibleOptions) (*Verse, error) {
 
-	resp, err := bot.get(baseURL+verse, bibleOptions, &Verse{}, &ErrResponse{})
+	resp, err := bot.req.New().Get(baseURL + verse).Execute()
 
 	if err != nil {
 		return nil, err

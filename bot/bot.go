@@ -6,13 +6,12 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
-	"net/http"
 	"strings"
 	"time"
 
+	request "github.com/AidenHadisi/go-simple-request"
 	"github.com/dghubble/go-twitter/twitter"
 	"github.com/dghubble/oauth1"
-	"github.com/google/go-querystring/query"
 	"github.com/jasonlvhit/gocron"
 	"github.com/patrickmn/go-cache"
 )
@@ -29,15 +28,11 @@ type Auth struct {
 	AccessSecret   string
 }
 
-type httpClient interface {
-	Do(req *http.Request) (*http.Response, error)
-}
-
 //Bot defines MyDailyBibleBot structure
 type Bot struct {
 	TwitterClient *twitter.Client
 	Auth          *Auth
-	HTTPClient    httpClient
+	req           *request.Request
 	cache         *cache.Cache
 }
 
@@ -53,9 +48,6 @@ func CreateBot(auth *Auth) (*Bot, error) {
 	bot.Auth = auth
 
 	bot.TwitterClient = twitter.NewClient(httpClient)
-	bot.HTTPClient = &http.Client{
-		Timeout: time.Second,
-	}
 	bot.cache = cache.New(time.Hour, 15*time.Minute)
 
 	byteValue, err := ioutil.ReadFile("bot/verses.json")
@@ -67,6 +59,8 @@ func CreateBot(auth *Auth) (*Bot, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	bot.req = request.New().SetFailure(&ErrResponse{}).SetSuccess(&Response{})
 
 	gocron.Every(5).Hour().From(gocron.NextTick()).Do(bot.hourlyPost)
 	gocron.Start()
@@ -88,73 +82,4 @@ func (bot *Bot) hourlyPost() {
 	if err != nil {
 		log.Println(err)
 	}
-}
-
-func (bot *Bot) get(path string, reqData, success, failure interface{}) (*Response, error) {
-	return bot.sendRequest(http.MethodGet, path, reqData, success, failure)
-}
-
-func (bot *Bot) sendRequest(method, path string, reqData, success, failaure interface{}) (*Response, error) {
-
-	req, err := http.NewRequest(method, path, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	v, err := query.Values(reqData)
-	if err == nil {
-		req.URL.RawQuery = v.Encode()
-	}
-
-	resp, err := bot.do(req, success, failaure)
-
-	return resp, err
-}
-
-func (bot *Bot) do(req *http.Request, success, failure interface{}) (*Response, error) {
-
-	response := &Response{}
-	resp, err := bot.HTTPClient.Do(req)
-
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	// if resp.StatusCode == http.StatusNoContent || resp.ContentLength == 0 {
-	// 	return response, nil
-	// }
-
-	response.StatusCode = resp.StatusCode
-	response.Header = resp.Header
-
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	err = decodeResp(response, bodyBytes, success, failure)
-
-	if err != nil {
-		err = fmt.Errorf("failed to decode API response: %s", err.Error())
-	}
-
-	return response, err
-}
-
-func decodeResp(resp *Response, body []byte, success, failure interface{}) error {
-	if status := resp.StatusCode; 200 <= status && status <= 299 {
-		if success != nil {
-			resp.Success = success
-
-			return json.Unmarshal(body, &resp.Success)
-		}
-
-	} else {
-		if failure != nil {
-			resp.Failure = failure
-			return json.Unmarshal(body, &resp.Failure)
-		}
-	}
-	return nil
-
 }
