@@ -51,7 +51,7 @@ func CreateBot(auth *Auth) (*Bot, error) {
 	bot.TwitterClient = twitter.NewClient(httpClient)
 	bot.cache = cache.New(time.Hour, 15*time.Minute)
 
-	byteValue, err := ioutil.ReadFile("bot/topic.json")
+	byteValue, err := ioutil.ReadFile("bot/topics.json")
 	if err != nil {
 		return nil, err
 	}
