@@ -18,7 +18,8 @@ import (
 
 const botUsername = "MyDailyBibleBot"
 
-var verses []string
+var verses map[string][]string
+var topics []string
 
 //Auth defines a struct for Twitter auth tokens
 type Auth struct {
@@ -50,7 +51,7 @@ func CreateBot(auth *Auth) (*Bot, error) {
 	bot.TwitterClient = twitter.NewClient(httpClient)
 	bot.cache = cache.New(time.Hour, 15*time.Minute)
 
-	byteValue, err := ioutil.ReadFile("bot/verses.json")
+	byteValue, err := ioutil.ReadFile("bot/topic.json")
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +59,10 @@ func CreateBot(auth *Auth) (*Bot, error) {
 	err = json.Unmarshal(byteValue, &verses)
 	if err != nil {
 		return nil, err
+	}
+
+	for k := range verses {
+		topics = append(topics, k)
 	}
 
 	bot.req = request.New().SetFailure(&ErrResponse{}).SetSuccess(&Verse{}).SetQuery(&BibleOptions{Translation: "kjv"})
@@ -69,7 +74,8 @@ func CreateBot(auth *Auth) (*Bot, error) {
 }
 
 func (bot *Bot) hourlyPost() {
-	randomVerse := verses[rand.Intn(len(verses))]
+	randomTopic := topics[rand.Intn(len(topics))]
+	randomVerse := verses[randomTopic][rand.Intn(len(verses))]
 	resp, err := bot.GetVerse(randomVerse, &BibleOptions{Translation: "kjv"})
 	if err != nil {
 		log.Println(err)
