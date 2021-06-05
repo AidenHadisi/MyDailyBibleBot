@@ -76,7 +76,7 @@ func CreateBot(auth *Auth) (*Bot, error) {
 func (bot *Bot) hourlyPost() {
 	randomTopic := topics[rand.Intn(len(topics))]
 	randomVerse := verses[randomTopic][rand.Intn(len(verses))]
-	resp, err := bot.GetVerse(randomVerse, &BibleOptions{Translation: "kjv"})
+	resp, err := bot.GetVerse(randomVerse)
 	if err != nil {
 		log.Println(err)
 		return

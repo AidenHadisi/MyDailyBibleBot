@@ -2,17 +2,11 @@ package bot
 
 import (
 	"fmt"
-	"net/http"
 )
 
 const (
 	baseURL = "https://bible-api.com/"
 )
-
-type ResponseData struct {
-	StatusCode int
-	Header     http.Header
-}
 
 type verse struct {
 	BookID   string `json:"book_id"`
@@ -42,7 +36,7 @@ func (e ErrResponse) Error() string {
 }
 
 //GetVerse gets the requested verses from the API
-func (bot *Bot) GetVerse(verse string, bibleOptions *BibleOptions) (*Verse, error) {
+func (bot *Bot) GetVerse(verse string) (*Verse, error) {
 
 	resp, err := bot.req.New().Get(baseURL + verse).Execute()
 

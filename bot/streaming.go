@@ -87,7 +87,7 @@ func (bot *Bot) fetch(verse string) (string, error) {
 		return cached.(string), nil
 	}
 
-	response, err := bot.GetVerse(verse, &BibleOptions{Translation: "kjv"})
+	response, err := bot.GetVerse(verse)
 	if err != nil {
 		return "", err
 	}
