@@ -1,0 +1,21 @@
+linters-settings:
+  maligned:
+      suggest-new: true
+
+  goconst:
+    min-occurrences: 3
+
+  misspell:
+      locale: US
+      ignore-words:
+      - amazeful
+
+  linters:
+    enable:
+      - dogsled
+      - dupl
+      - goimports
+      - misspell
+      - unconvert
+      - godot
+      - gosec
