@@ -24,7 +24,7 @@ type Parser struct {
 
 func NewParser() *Parser {
 	return &Parser{
-		Size: 50,
+		Size: 40,
 	}
 }
 
