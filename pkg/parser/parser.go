@@ -23,7 +23,9 @@ type Parser struct {
 }
 
 func NewParser() *Parser {
-	return &Parser{}
+	return &Parser{
+		Size: 50,
+	}
 }
 
 //HasImage returns if the text included an image request

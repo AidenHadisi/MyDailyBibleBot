@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/AidenHadisi/MyDailyBibleBot/configs"
 	"github.com/dghubble/go-twitter/twitter"
+	"github.com/dghubble/oauth1"
 )
 
 type ITwitter interface {
@@ -26,9 +28,13 @@ type TwitterApi struct {
 	streamLock sync.Mutex
 }
 
-func NewTwitterApi(client *twitter.Client) *TwitterApi {
+func NewTwitterApi(cfg *configs.Config) *TwitterApi {
+	config := oauth1.NewConfig(cfg.ConsumerKey, cfg.ConsumerSecret)
+	token := oauth1.NewToken(cfg.AccessToken, cfg.AccessSecret)
+	httpClient := config.Client(oauth1.NoContext, token)
+
 	return &TwitterApi{
-		client:  client,
+		client:  twitter.NewClient(httpClient),
 		streams: make([]*twitter.Stream, 0),
 	}
 }
@@ -36,6 +42,15 @@ func NewTwitterApi(client *twitter.Client) *TwitterApi {
 //ListenToMentions starts listening to a twitter mentions of given username.
 //It returns a channel that can be listened on.
 func (t *TwitterApi) ListenToMentions(username string) (<-chan interface{}, error) {
+	_, _, err := t.client.Accounts.VerifyCredentials(&twitter.AccountVerifyParams{
+		SkipStatus:   twitter.Bool(true),
+		IncludeEmail: twitter.Bool(true),
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("credentials invalid -- %v", err)
+	}
+
 	t.streamLock.Lock()
 	defer t.streamLock.Unlock()
 	params := &twitter.StreamFilterParams{

@@ -1,6 +1,8 @@
 package httpclient
 
-import "net/http"
+import (
+	"net/http"
+)
 
 type HttpClient interface {
 	//Do executes a request and returns response.

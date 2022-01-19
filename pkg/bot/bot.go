@@ -3,104 +3,96 @@ package bot
 import (
 	"fmt"
 	"log"
-	"net/http"
-	"os"
-	"os/signal"
-	"strings"
-	"syscall"
-	"time"
 
 	"github.com/AidenHadisi/MyDailyBibleBot/configs"
-	"github.com/AidenHadisi/MyDailyBibleBot/internal/bible"
-	"github.com/AidenHadisi/MyDailyBibleBot/internal/twitter"
+	"github.com/AidenHadisi/MyDailyBibleBot/pkg/bible"
+	"github.com/AidenHadisi/MyDailyBibleBot/pkg/cron"
+	"github.com/AidenHadisi/MyDailyBibleBot/pkg/image"
+	"github.com/AidenHadisi/MyDailyBibleBot/pkg/parser"
+	"github.com/AidenHadisi/MyDailyBibleBot/pkg/twitter"
 
-	"github.com/AidenHadisi/go-text-splitter/splitter"
-	"github.com/jasonlvhit/gocron"
+	twt "github.com/dghubble/go-twitter/twitter"
 )
 
 //Bot defines MyDailyBibleBot structure
 type Bot struct {
 	config  *configs.Config
 	twitter twitter.ITwitter
-	bible   bible.BibleAPI
-	done    chan bool
+	bible   *bible.BibleAPI
+	cron    cron.Cron
+	image   *image.ImageProcessor
 }
 
-func NewBot(cfg *configs.Config, twitter twitter.ITwitter, b bible.BibleAPI) *Bot {
+func NewBot(cfg *configs.Config, twitter twitter.ITwitter, b *bible.BibleAPI, cron cron.Cron, image *image.ImageProcessor) *Bot {
 	return &Bot{
 		twitter: twitter,
 		bible:   b,
 		config:  cfg,
-		done:    make(chan bool, 1),
+		cron:    cron,
+		image:   image,
 	}
 }
 
-func (b *Bot) Start() error {
-	err := LoadVerses()
+func (b *Bot) Init() error {
+	//init the api client
+	err := b.bible.Init()
 	if err != nil {
 		return err
 	}
+
+	//start listening to twitter
 	c, err := b.twitter.ListenToMentions(b.config.UserName)
 	if err != nil {
 		return err
 	}
 	go b.handleMessages(c)
 
-	err = gocron.Every(5).Hour().From(gocron.NextTick()).Do(b.randomPost)
+	//start the cron
+	err = b.cron.StartCron("0 */6 * * *", b.randomPost)
 	if err != nil {
 		return err
 	}
-	gocron.Start()
 
-	ch := make(chan os.Signal)
-	signal.Notify(ch, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
-	go func() {
-		<-ch
-		b.done <- true
-	}()
-	<-b.done
-	b.shutdown()
 	return nil
 }
 
 func (b *Bot) handleMessages(messages <-chan interface{}) {
 	for message := range messages {
-		if msg, ok := message.(*twitter.Tweet); ok {
+		if msg, ok := message.(*twt.Tweet); ok {
 			b.messageHandler(msg)
 		}
 	}
 }
 
-func (b *Bot) messageHandler(tweet *twitter.Tweet) {
+func (b *Bot) messageHandler(tweet *twt.Tweet) {
 	if tweet.User.ScreenName == b.config.UserName {
 		return
 	}
 
-	verseRequest := NewVerseRequest()
+	verseRequest := parser.NewParser()
 	err := verseRequest.Parse(tweet.Text)
-	if err != nil || !verseRequest.IsValid() {
+	if err != nil {
 		return
 	}
 
 	go b.reply(tweet, verseRequest)
 }
 
-func (b *Bot) reply(tweet *twitter.Tweet, req *VerseRequest) {
+func (b *Bot) reply(tweet *twt.Tweet, parsed *parser.Parser) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Printf("reply recovered -- %v", err)
 		}
 	}()
 
-	text, err := b.bible.GetVerse(req.GetPath())
+	text, err := b.bible.GetVerse(parsed.GetPath())
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	if req.HasImage() {
-		processor := NewImageProcessor(&http.Client{Timeout: time.Minute})
-		by, err := processor.Process(req.Img, text)
+	if parsed.HasImage() {
+		by, err := b.image.Process(parsed.Img, text, parsed.Size)
 		if err != nil {
 			message := fmt.Sprintf("@%s %s", tweet.User.ScreenName, "Sorry we weren't able to process that image.")
 			b.twitter.Tweet(message, tweet.ID, nil)
@@ -118,35 +110,20 @@ func (b *Bot) reply(tweet *twitter.Tweet, req *VerseRequest) {
 
 }
 
-func (b *Bot) sendText(tweet *twitter.Tweet, verse string) {
-	reponseParts := splitter.Split(verse, 260)
-	t := tweet
-	var err error
-	for index, part := range reponseParts {
-		var message string
-		//If intial tweet @ the sender, otherwise reply to previous bot message to create a thread
-		if index == 0 {
-			message = fmt.Sprintf("@%s %s", t.User.ScreenName, part)
-		} else {
-			message = fmt.Sprintf("@%s %s", b.config.UserName, part)
-		}
-		err = b.twitter.Tweet(message, t.ID, nil)
-		if err != nil {
-			return
-		}
-	}
-}
-
 func (b *Bot) randomPost() {
-	randomVerse := GetRandomVerse()
-	resp, err := b.bible.GetVerse(randomVerse)
+	resp, err := b.bible.GetRandomVerse()
 	if err != nil {
 		return
 	}
-	reply := fmt.Sprintf("\"%s\" - %s", strings.ReplaceAll(resp, "\n", " "), randomVerse)
-	b.twitter.Tweet(reply, 0, nil)
+	image, err := b.image.Process("https://picsum.photos/1200/625", resp, 40)
+	if err != nil {
+		return
+	}
+	b.twitter.Tweet("", 0, [][]byte{image})
+
 }
 
-func (b *Bot) shutdown() {
+func (b *Bot) Shutdown() {
 	b.twitter.Stop()
+	b.cron.StopCrons()
 }

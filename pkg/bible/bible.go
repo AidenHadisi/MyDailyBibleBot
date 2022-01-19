@@ -3,6 +3,8 @@ package bible
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"strings"
 	"time"
@@ -14,6 +16,8 @@ import (
 type BibleAPI struct {
 	client httpclient.HttpClient
 	cache  cache.Cache
+	topics []string
+	verses map[string][]string
 }
 
 type BibleApiResult struct {
@@ -24,12 +28,44 @@ func NewBibleAPI(client httpclient.HttpClient, cache cache.Cache) *BibleAPI {
 	return &BibleAPI{
 		client: client,
 		cache:  cache,
+		topics: make([]string, 0),
+		verses: make(map[string][]string),
 	}
 }
 
-//GetVerse gets the requested verses from the API
-func (bot *BibleAPI) GetVerse(verse string) (string, error) {
-	cached, err := bot.cache.Get(verse)
+//Init initializes the api client.
+func (b *BibleAPI) Init() error {
+	byteValue, err := ioutil.ReadFile("../../assets/topics.json")
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(byteValue, &b.verses)
+	if err != nil {
+		return err
+	}
+
+	for k := range b.verses {
+		b.topics = append(b.topics, k)
+	}
+
+	return nil
+}
+
+//GetRandomVerse gets a random verse from API.
+func (b *BibleAPI) GetRandomVerse() (string, error) {
+	randomTopic := b.topics[rand.Intn(len(b.topics))]
+	randomVerse := b.verses[randomTopic][rand.Intn(len(b.verses[randomTopic]))]
+	resp, err := b.GetVerse(randomVerse)
+	if err != nil {
+		return "", err
+	}
+	return resp, nil
+}
+
+//GetVerse gets the requested verses from the API.
+func (b *BibleAPI) GetVerse(verse string) (string, error) {
+	cached, err := b.cache.Get(verse)
 	if err == nil {
 		return cached, nil
 	}
@@ -40,7 +76,7 @@ func (bot *BibleAPI) GetVerse(verse string) (string, error) {
 		return "", err
 	}
 
-	resp, err := bot.client.Do(req)
+	resp, err := b.client.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -55,6 +91,6 @@ func (bot *BibleAPI) GetVerse(verse string) (string, error) {
 	}
 	text := fmt.Sprintf("\"%s\" - %s", strings.ReplaceAll(bibleApiResult.Text, "\n", " "), verse)
 
-	bot.cache.Set(verse, text, time.Hour*2)
+	b.cache.Set(verse, text, time.Hour*2)
 	return text, nil
 }

@@ -68,3 +68,31 @@ func TestGetVerse(t *testing.T) {
 		})
 	}
 }
+
+func TestInit(t *testing.T) {
+	api := NewBibleAPI(new(mocks.HttpClient), new(mocks.Cache))
+
+	err := api.Init()
+	assert.NoError(t, err)
+}
+
+func TestGetRandomVerse(t *testing.T) {
+	mockedClient := new(mocks.HttpClient)
+	r := ioutil.NopCloser(bytes.NewReader([]byte(fmt.Sprintf(`{"text": "%s"}`, "this is a test"))))
+	mockedClient.On("Do", mock.Anything).Return(&http.Response{Body: r, StatusCode: http.StatusOK}, nil)
+
+	mockedCache := new(mocks.Cache)
+	mockedCache.On("Get", mock.Anything).Return("", errors.New("err"))
+
+	mockedCache.On("Set", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	api := NewBibleAPI(mockedClient, mockedCache)
+
+	err := api.Init()
+	assert.NoError(t, err)
+
+	randomVerse, err := api.GetRandomVerse()
+	assert.NoError(t, err)
+
+	assert.Equal(t, "\"this is a test\"", strings.Split(randomVerse, " - ")[0])
+}

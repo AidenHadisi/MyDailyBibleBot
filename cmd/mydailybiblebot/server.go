@@ -1,18 +1,23 @@
 /*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
+Copyright © 2022 AIDEN HADISI
 
 */
-package cmd
+package main
 
 import (
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
-	"github.com/AidenHadisi/MyDailyBibleBot/api"
 	"github.com/AidenHadisi/MyDailyBibleBot/configs"
-	"github.com/dghubble/go-twitter/twitter"
-	"github.com/dghubble/oauth1"
+	"github.com/AidenHadisi/MyDailyBibleBot/pkg/bible"
+	"github.com/AidenHadisi/MyDailyBibleBot/pkg/bot"
+	"github.com/AidenHadisi/MyDailyBibleBot/pkg/cache"
+	"github.com/AidenHadisi/MyDailyBibleBot/pkg/cron"
+	"github.com/AidenHadisi/MyDailyBibleBot/pkg/image"
+	"github.com/AidenHadisi/MyDailyBibleBot/pkg/twitter"
 	"github.com/spf13/cobra"
 )
 
@@ -29,18 +34,27 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+
 		cfg := configs.LoadConfig(dev)
+		twitterApi := twitter.NewTwitterApi(cfg)
+		memoryCache := cache.NewMemoryCache()
+		bibleAPI := bible.NewBibleAPI(&http.Client{Timeout: time.Minute}, memoryCache)
+		simpleCron := cron.NewSimpleCron()
+		imageProcessor := image.NewImageProcessor(&http.Client{Timeout: time.Minute * 2})
+		bot := bot.NewBot(cfg, twitterApi, bibleAPI, simpleCron, imageProcessor)
 
-		httpClient := &http.Client{Timeout: time.Minute * 2}
+		err = bot.Init()
+		if err != nil {
+			return err
+		}
 
-		config := oauth1.NewConfig(cfg.ConsumerKey, cfg.ConsumerSecret)
-		token := oauth1.NewToken(cfg.AccessToken, cfg.AccessSecret)
-		httpClient := config.Client(oauth1.NoContext, token)
-		goTwitter := twitter.NewClient(httpClient)
+		// twitterClient := api.NewTwitterApi(goTwitter)
 
-		bibleApi := api.BibleAPI()
+		sc := make(chan os.Signal, 1)
+		signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM)
+		<-sc
 
-		twitterClient := api.NewTwitterApi(goTwitter)
+		bot.Shutdown()
 
 		return nil
 	},
@@ -64,5 +78,5 @@ func init() {
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.Flags().BoolP("dev", "d", false, "run dev mode")
 }
