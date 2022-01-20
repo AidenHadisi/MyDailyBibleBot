@@ -6,8 +6,10 @@ import (
 	"image/color"
 	"net/http"
 
+	"github.com/AidenHadisi/MyDailyBibleBot/assets"
 	"github.com/AidenHadisi/MyDailyBibleBot/pkg/httpclient"
 	"github.com/fogleman/gg"
+	"github.com/golang/freetype/truetype"
 	"github.com/nfnt/resize"
 )
 
@@ -60,8 +62,16 @@ func (i *ImageProcessor) Process(url, text string, fontSize int) ([]byte, error)
 
 	//Now draw the text inside rectangle
 
+	f, err := truetype.Parse(assets.Font)
+	if err != nil {
+		return nil, err
+	}
+	face := truetype.NewFace(f, &truetype.Options{
+		Size: float64(fontSize),
+	})
+
 	dc.SetColor(color.White)
-	dc.LoadFontFace("../../assets/KeepCalm-Medium.ttf", float64(fontSize))
+	dc.SetFontFace(face)
 	dc.DrawStringWrapped(text, x, y, 0.5, 0.5, maxWidth, 1.5, gg.AlignCenter)
 
 	var buf bytes.Buffer

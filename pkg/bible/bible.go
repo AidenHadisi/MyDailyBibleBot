@@ -3,12 +3,12 @@ package bible
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/AidenHadisi/MyDailyBibleBot/assets"
 	"github.com/AidenHadisi/MyDailyBibleBot/pkg/cache"
 	"github.com/AidenHadisi/MyDailyBibleBot/pkg/httpclient"
 )
@@ -35,12 +35,7 @@ func NewBibleAPI(client httpclient.HttpClient, cache cache.Cache) *BibleAPI {
 
 //Init initializes the api client.
 func (b *BibleAPI) Init() error {
-	byteValue, err := ioutil.ReadFile("../../assets/topics.json")
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(byteValue, &b.verses)
+	err := json.Unmarshal(assets.Topics, &b.verses)
 	if err != nil {
 		return err
 	}
