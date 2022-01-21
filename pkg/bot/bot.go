@@ -48,7 +48,12 @@ func (b *Bot) Init() error {
 	go b.handleMessages(c)
 
 	//start the cron
-	err = b.cron.StartCron("0 */6 * * *", b.randomPost)
+	err = b.cron.CreateJob("0 */6 * * *", b.randomPost)
+	if err != nil {
+		return err
+	}
+
+	err = b.cron.StartCrons()
 	if err != nil {
 		return err
 	}

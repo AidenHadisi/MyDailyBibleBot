@@ -7,7 +7,8 @@ import (
 )
 
 type Cron interface {
-	StartCron(expression string, jobFun interface{}) error
+	CreateJob(expression string, jobFun interface{}) error
+	StartCrons() error
 	StopCrons()
 }
 
@@ -21,12 +22,16 @@ func NewSimpleCron() *SimpleCron {
 	}
 }
 
-func (s *SimpleCron) StartCron(expression string, jobFun interface{}) error {
+func (s *SimpleCron) CreateJob(expression string, jobFun interface{}) error {
 	_, err := s.c.Cron(expression).Do(jobFun)
 	if err != nil {
 		return err
 	}
+	return nil
+}
 
+func (s *SimpleCron) StartCrons() error {
+	s.c.StartAsync()
 	return nil
 }
 
